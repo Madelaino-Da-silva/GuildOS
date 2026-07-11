@@ -1,0 +1,46 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: guildos-api
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - guildos-data:/app/data
+      - guildos-logs:/app/logs
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  bot:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: guildos-bot
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - guildos-data:/app/data
+      - guildos-logs:/app/logs
+    command: python -m app.discord_bot.bot
+    depends_on:
+      - api
+
+  # Dashboard frontend will be added here once the React app is built:
+  # dashboard:
+  #   build:
+  #     context: ./dashboard
+  #   ports:
+  #     - "5173:80"
+  #   depends_on:
+  #     - api
+
+volumes:
+  guildos-data:
+  guildos-logs:
